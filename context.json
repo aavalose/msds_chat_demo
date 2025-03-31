@@ -378,25 +378,25 @@
           "course_id": "MSDS 680",
           "course_name": "Machine Learning Operations",
           "units": 2,
-          "description": "The objective of this course is to learn the different stages of the end-to-end Machine Learning pipeline, from model development experiment tracking, all the way to model serving and model monitoring. For each step in the pipeline, students explore practical real world use cases and get hands-on experience with open source tools."
+          "description": "This is a part of the Data Engineering Concentration. The objective of this course is to learn the different stages of the end-to-end Machine Learning pipeline, from model development experiment tracking, all the way to model serving and model monitoring. For each step in the pipeline, students explore practical real world use cases and get hands-on experience with open source tools."
         },
         {
           "course_id": "MSDS 681",
           "course_name": "Data Lakehouse",
           "units": 2,
-          "description": "This course helps students understand the data lakehouse architecture, which enables the storage of raw, structured, and unstructured data for business analytics and machine learning."
+          "description": "This is a part of the Data Engineering Concentration. This course helps students understand the data lakehouse architecture, which enables the storage of raw, structured, and unstructured data for business analytics and machine learning."
         },
         {
           "course_id": "MSDS 682",
           "course_name": "Data Stream Processing",
           "units": 2,
-          "description": "This class equips students with the skills necessary to process continuous data streams at scale and in real-time."
+          "description": "This is a part of the Data Engineering Concentration. This class equips students with the skills necessary to process continuous data streams at scale and in real-time."
         },
         {
           "course_id": "MSDS 683",
           "course_name": "Data Architecture",
           "units": 2,
-          "description": "In this course, the students will earn the skill sets to understand the business applications, problems, and needs and design and organize data assets using data structures, storage, processing platforms, etc., accordingly to provide desirable efficiency, reliability, and security."
+          "description": "This is a part of the Data Engineering Concentration. In this course, the students will earn the skill sets to understand the business applications, problems, and needs and design and organize data assets using data structures, storage, processing platforms, etc., accordingly to provide desirable efficiency, reliability, and security."
         }
       ],
       "practicum_series": [
