@@ -478,19 +478,64 @@ def main():
                 bot_msg = st.session_state.chat_history[i + 1]
                 chat_pairs.append((user_msg, bot_msg))
 
+        # After the user input and send button, but before the chat container
+        st.write("")  # Remove extra spacing
+
         # Create a container for the chat history with fixed height and scrolling
         chat_container = st.container()
         with chat_container:
+            # Remove any extra padding/margins at the top
+            st.markdown(
+                """
+                <style>
+                /* Remove extra padding at the top of the container */
+                .stMarkdown {
+                    margin-top: -100px;  /* Adjust this value to move container up/down */
+                }
+                
+                /* Ensure proper spacing between input and chat */
+                .stTextInput {
+                    margin-bottom: 10px;
+                }
+                
+                /* Custom scrollbar styling */
+                div[data-testid="stMarkdownContainer"] {
+                    scrollbar-width: thin;
+                    scrollbar-color: #888 #f1f1f1;
+                    margin-top: 0;
+                    padding-top: 0;
+                }
+                
+                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar {
+                    width: 8px;
+                }
+                
+                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-track {
+                    background: #f1f1f1;
+                    border-radius: 4px;
+                }
+                
+                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb {
+                    background: #888;
+                    border-radius: 4px;
+                }
+                
+                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb:hover {
+                    background: #555;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True
+            )
+            
             # Calculate total height based on number of messages
-            # Assuming each message takes about 100px on average
-            min_height = 400  # Minimum height in pixels
-            message_count = len(chat_pairs) * 2  # Each pair has 2 messages
-            container_height = max(min_height, min(message_count * 100, 800))  # Cap at 800px
+            min_height = 500  # Increased minimum height
+            message_count = len(chat_pairs) * 2
+            container_height = max(min_height, min(message_count * 100, 800))
             
             # Create scrollable container
             chat_placeholder = st.empty()
             with chat_placeholder.container():
-                # Apply custom CSS for scrollable container
                 st.markdown(
                     f"""
                     <div style="
@@ -499,7 +544,9 @@ def main():
                         display: flex;
                         flex-direction: column;
                         padding: 10px;
-                        margin-bottom: 20px;
+                        margin-top: 0;
+                        border: 1px solid #ddd;
+                        border-radius: 10px;
                     ">
                     """, 
                     unsafe_allow_html=True
