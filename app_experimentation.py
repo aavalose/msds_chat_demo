@@ -580,9 +580,24 @@ def main():
             # Chat container
             chat_container = st.container()
             with chat_container:
-                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-                st.markdown('<div class="messages-wrapper">', unsafe_allow_html=True)
+                # Simple container with fixed height and scrolling
+                st.markdown("""
+                    <style>
+                    .chat-container {
+                        height: 600px;
+                        overflow-y: auto;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 10px;
+                        padding: 1rem;
+                        margin-top: 1rem;
+                        background-color: transparent;
+                    }
+                    </style>
+                """, unsafe_allow_html=True)
                 
+                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+                
+                # Display welcome message if no messages
                 if not chat_pairs:
                     st.markdown(
                         """
@@ -593,36 +608,33 @@ def main():
                         unsafe_allow_html=True
                     )
                 
+                # Display messages in chronological order
                 for i, (user_msg, bot_msg) in enumerate(chat_pairs):
-                    try:
-                        # User message
-                        st.markdown(
-                            f"""
-                            <div class="message user-message">
-                                {user_msg["content"]}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        
-                        # Bot message
-                        cleaned_bot_msg = clean_message_text(bot_msg["content"])
-                        st.markdown(
-                            f"""
-                            <div class="message bot-message">
-                                {cleaned_bot_msg}
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        
-                        # Add feedback buttons after each bot message
-                        add_feedback_buttons(i)
-                        
-                    except Exception as e:
-                        st.error(f"Error displaying message: {str(e)}")
+                    # User message
+                    st.markdown(
+                        f"""
+                        <div class="message user-message">
+                            {user_msg["content"]}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Bot message
+                    cleaned_bot_msg = clean_message_text(bot_msg["content"])
+                    st.markdown(
+                        f"""
+                        <div class="message bot-message">
+                            {cleaned_bot_msg}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Add feedback buttons after each bot message
+                    add_feedback_buttons(i)
                 
-                st.markdown('</div></div>', unsafe_allow_html=True)
+                st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
             st.sidebar.subheader("Session Management")
