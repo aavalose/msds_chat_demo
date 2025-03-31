@@ -692,9 +692,9 @@
     },
     "Career Outcomes": {
       "salaries": {
-        "median_base_california": "$147,500",
-        "median_base_international": "$148,400",
-        "average_signing_bonus": "$24,225"
+        "median base salary in California": "$147,500",
+        "median base salary internationally": "$148,400",
+        "average signing bonus": "$24,225"
       },
       "job_titles": [
         "Data Scientist",
