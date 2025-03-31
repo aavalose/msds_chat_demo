@@ -478,62 +478,108 @@ def main():
                 bot_msg = st.session_state.chat_history[i + 1]
                 chat_pairs.append((user_msg, bot_msg))
 
-        # Display newest messages first
-        for i, (user_msg, bot_msg) in enumerate(reversed(chat_pairs)):
-            # User message - right aligned
-            user_container = st.container()
-            with user_container:
-                col1, col2 = st.columns([6, 1])
-                with col1:
+        # Create a container for the chat history with fixed height and scrolling
+        chat_container = st.container()
+        with chat_container:
+            # Calculate total height based on number of messages
+            # Assuming each message takes about 100px on average
+            min_height = 400  # Minimum height in pixels
+            message_count = len(chat_pairs) * 2  # Each pair has 2 messages
+            container_height = max(min_height, min(message_count * 100, 800))  # Cap at 800px
+            
+            # Create scrollable container
+            chat_placeholder = st.empty()
+            with chat_placeholder.container():
+                # Apply custom CSS for scrollable container
+                st.markdown(
+                    f"""
+                    <div style="
+                        height: {container_height}px;
+                        overflow-y: auto;
+                        display: flex;
+                        flex-direction: column;
+                        padding: 10px;
+                        margin-bottom: 20px;
+                    ">
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                # Display messages in chronological order (oldest to newest)
+                for i, (user_msg, bot_msg) in enumerate(chat_pairs):
+                    # User message - right aligned
                     st.markdown(
                         f"""
-                        <div style="
-                            background-color: #007AFF;
-                            color: white;
-                            padding: 10px 15px;
-                            border-radius: 20px;
-                            margin: 5px 0;
-                            max-width: 90%;
-                            float: right;
-                        ">
-                            {user_msg["content"]}
+                        <div style="display: flex; justify-content: flex-end; align-items: center; margin: 5px;">
+                            <div style="
+                                background-color: #007AFF;
+                                color: white;
+                                padding: 10px 15px;
+                                border-radius: 20px;
+                                margin-right: 10px;
+                                max-width: 70%;
+                            ">
+                                {user_msg["content"]}
+                            </div>
+                            <div>🧑</div>
                         </div>
                         """,
                         unsafe_allow_html=True
                     )
-                with col2:
-                    st.write("🧑")
 
-            # Bot message - left aligned
-            bot_container = st.container()
-            with bot_container:
-                col1, col2 = st.columns([1, 6])
-                with col1:
-                    st.write("🤖")
-                with col2:
-                    # Clean the bot message more thoroughly
+                    # Bot message - left aligned
                     cleaned_bot_msg = (bot_msg["content"]
                         .replace("</div>", "")
                         .replace("<div>", "")
-                        .replace("andthe", "and the")  # Fix common formatting issues
+                        .replace("_", "")
                         .strip())
-                    st.write(
-                        f'<div style="background-color: #E9ECEF; color: black; padding: 10px 15px; border-radius: 20px; margin: 5px 0; max-width: 90%;">{cleaned_bot_msg}</div>',
+                    
+                    st.markdown(
+                        f"""
+                        <div style="display: flex; justify-content: flex-start; align-items: center; margin: 5px;">
+                            <div>🤖</div>
+                            <div style="
+                                background-color: #E9ECEF;
+                                color: black;
+                                padding: 10px 15px;
+                                border-radius: 20px;
+                                margin-left: 10px;
+                                max-width: 70%;
+                            ">
+                                {cleaned_bot_msg}
+                            </div>
+                        </div>
+                        """,
                         unsafe_allow_html=True
                     )
-            
-            # Feedback buttons
-            col1, col2, col3 = st.columns([1, 1, 3])
-            with col1:
-                if st.button("👍", key=f"thumbs_up_{i}"):
-                    if i < len(st.session_state.conversation_ids):
-                        update_feedback(st.session_state.conversation_ids[-(i+1)], "positive")
-                        st.success("Thank you for your feedback!")
-            with col2:
-                if st.button("👎", key=f"thumbs_down_{i}"):
-                    if i < len(st.session_state.conversation_ids):
-                        update_feedback(st.session_state.conversation_ids[-(i+1)], "negative")
-                        st.success("Thank you for your feedback!")
+
+                    # Feedback buttons in a flex container
+                    st.markdown(
+                        f"""
+                        <div style="display: flex; justify-content: flex-start; gap: 10px; margin: 5px 0 15px 40px;">
+                            <button onclick="handle_feedback('{i}', 'positive')" style="border: none; background: none; cursor: pointer; padding: 5px;">👍</button>
+                            <button onclick="handle_feedback('{i}', 'negative')" style="border: none; background: none; cursor: pointer; padding: 5px;">👎</button>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+
+                # Close the scrollable container
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # Add auto-scroll JavaScript
+            st.markdown(
+                """
+                <script>
+                    // Auto-scroll to bottom
+                    const chatContainer = document.querySelector('[data-testid="stMarkdownContainer"]');
+                    if (chatContainer) {
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                </script>
+                """,
+                unsafe_allow_html=True
+            )
 
     with tab3:
         st.session_state.debug_mode = st.checkbox("Enable Debug Mode", value=False)
@@ -589,6 +635,38 @@ def verify_qa_data():
 
 # Add this call after check_required_files()
 qa_df = verify_qa_data()
+
+# Add this near the top of your file
+st.markdown(
+    """
+    <style>
+    /* Custom scrollbar styling */
+    div[data-testid="stMarkdownContainer"] {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+    
+    div[data-testid="stMarkdownContainer"]::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+    
+    div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+    
+    div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 if __name__ == "__main__":
     main()
