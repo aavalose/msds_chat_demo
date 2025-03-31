@@ -511,6 +511,8 @@ def main():
                 with col1:
                     st.write("🤖")
                 with col2:
+                    # Clean the bot message to prevent HTML tags from being included
+                    cleaned_bot_msg = bot_msg["content"].replace("</div>", "").strip()
                     st.markdown(
                         f"""
                         <div style="
@@ -521,7 +523,7 @@ def main():
                             margin: 5px 0;
                             max-width: 90%;
                         ">
-                            {bot_msg["content"]}
+                            {cleaned_bot_msg}
                         </div>
                         """,
                         unsafe_allow_html=True
