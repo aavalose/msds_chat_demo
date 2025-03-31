@@ -456,20 +456,33 @@ def main():
             
             /* Custom container styling */
             .chat-container {
-                height: calc(100vh - 300px);
+                height: calc(100vh - 400px);
+                min-height: 300px;
                 overflow-y: auto;
-                border: 1px solid #ddd;
+                border: 1px solid rgba(255, 255, 255, 0.1);
                 border-radius: 10px;
                 padding: 1rem;
                 margin-top: 1rem;
-                background-color: white;
+                background-color: transparent;
+                display: flex;
+                flex-direction: column;
             }
             
-            /* Message styling */
+            /* Create a messages wrapper for proper ordering */
+            .messages-wrapper {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                min-height: 100%;
+            }
+            
+            /* Ensure messages stack properly */
             .message {
-                margin: 0.5rem 0;
-                padding: 0.5rem;
+                max-width: 80%;
+                margin: 0.4rem 0;
+                padding: 0.8rem 1rem;
                 border-radius: 15px;
+                word-wrap: break-word;
             }
             
             .user-message {
@@ -568,6 +581,7 @@ def main():
             chat_container = st.container()
             with chat_container:
                 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+                st.markdown('<div class="messages-wrapper">', unsafe_allow_html=True)
                 
                 if not chat_pairs:
                     st.markdown(
@@ -608,7 +622,7 @@ def main():
                     except Exception as e:
                         st.error(f"Error displaying message: {str(e)}")
                 
-                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('</div></div>', unsafe_allow_html=True)
         
         with col2:
             st.sidebar.subheader("Session Management")
