@@ -511,21 +511,14 @@ def main():
                 with col1:
                     st.write("🤖")
                 with col2:
-                    # Clean the bot message to prevent HTML tags from being included
-                    cleaned_bot_msg = bot_msg["content"].replace("</div>", "").strip()
-                    st.markdown(
-                        f"""
-                        <div style="
-                            background-color: #E9ECEF;
-                            color: black;
-                            padding: 10px 15px;
-                            border-radius: 20px;
-                            margin: 5px 0;
-                            max-width: 90%;
-                        ">
-                            {cleaned_bot_msg}
-                        </div>
-                        """,
+                    # Clean the bot message more thoroughly
+                    cleaned_bot_msg = (bot_msg["content"]
+                        .replace("</div>", "")
+                        .replace("<div>", "")
+                        .replace("andthe", "and the")  # Fix common formatting issues
+                        .strip())
+                    st.write(
+                        f'<div style="background-color: #E9ECEF; color: black; padding: 10px 15px; border-radius: 20px; margin: 5px 0; max-width: 90%;">{cleaned_bot_msg}</div>',
                         unsafe_allow_html=True
                     )
             
