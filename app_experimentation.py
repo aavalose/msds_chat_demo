@@ -177,15 +177,27 @@ def save_conversation(session_id, user_message, bot_response, response_time, met
         return None
 
 # Add this function after save_conversation
-def update_feedback(conversation_id, feedback):
+def update_feedback(conversation_id, feedback_type, details=None):
     if conversations_collection is None:
         st.error("MongoDB connection not available")
         return
         
     try:
+        feedback_data = {
+            "feedback_type": feedback_type,
+            "timestamp": datetime.now()
+        }
+        
+        # Add additional details if provided
+        if details:
+            feedback_data.update(details)
+        
         conversations_collection.update_one(
             {"_id": conversation_id},
-            {"$set": {"feedback": feedback}}
+            {"$set": {
+                "feedback": feedback_data,
+                "last_updated": datetime.now()
+            }}
         )
     except Exception as e:
         st.error(f"Error updating feedback: {str(e)}")
@@ -416,6 +428,10 @@ def main():
             elif key == 'session_id':
                 st.session_state[key] = datetime.now().strftime("%Y%m%d-%H%M%S")
 
+    # Add to the session state initialization
+    if 'last_activity' not in st.session_state:
+        st.session_state.last_activity = datetime.now()
+
     tab1, tab2, tab3 = st.tabs(["Chat", "About", "Debug"])
 
     with tab1:
@@ -469,6 +485,44 @@ def main():
                 margin-right: 20%;
                 margin-left: 1rem;
             }
+            
+            /* Add loading animation */
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.3; }
+                100% { opacity: 1; }
+            }
+            
+            .loading {
+                animation: pulse 1.5s infinite;
+                padding: 10px;
+                color: #666;
+            }
+            
+            /* Improve message spacing */
+            .message {
+                margin: 0.8rem 0;
+                padding: 0.8rem 1rem;
+                border-radius: 15px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            }
+            
+            /* Add hover effect on messages */
+            .message:hover {
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            }
+            
+            /* Improve input field */
+            .stTextInput input {
+                border-radius: 20px;
+                padding: 10px 15px;
+            }
+            
+            /* Style the send button */
+            .stButton button {
+                border-radius: 20px;
+                padding: 0.3rem 1.5rem;
+            }
             </style>
         """, unsafe_allow_html=True)
         
@@ -501,39 +555,58 @@ def main():
                             st.session_state.conversation_ids = []
                         st.session_state.conversation_ids.append(conversation_id)
             
+            # Get chat history pairs
+            chat_pairs = []
+            if 'chat_history' in st.session_state:
+                for i in range(0, len(st.session_state.chat_history), 2):
+                    if i + 1 < len(st.session_state.chat_history):
+                        user_msg = st.session_state.chat_history[i]
+                        bot_msg = st.session_state.chat_history[i + 1]
+                        chat_pairs.append((user_msg, bot_msg))
+            
             # Chat container
             chat_container = st.container()
             with chat_container:
                 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
                 
-                # Display messages
+                if not chat_pairs:
+                    st.markdown(
+                        """
+                        <div style="text-align: center; color: #666; padding: 20px;">
+                            Start a conversation by asking a question about the MSDS program!
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
                 for i, (user_msg, bot_msg) in enumerate(chat_pairs):
-                    # User message
-                    st.markdown(
-                        f"""
-                        <div class="message user-message">
-                            {user_msg["content"]}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    
-                    # Bot message
-                    cleaned_bot_msg = (bot_msg["content"]
-                        .replace("</div>", "")
-                        .replace("<div>", "")
-                        .replace("andthe", " and the ")
-                        .replace("_", "")
-                        .strip())
-                    
-                    st.markdown(
-                        f"""
-                        <div class="message bot-message">
-                            {cleaned_bot_msg}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    try:
+                        # User message
+                        st.markdown(
+                            f"""
+                            <div class="message user-message">
+                                {user_msg["content"]}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        
+                        # Bot message
+                        cleaned_bot_msg = clean_message_text(bot_msg["content"])
+                        st.markdown(
+                            f"""
+                            <div class="message bot-message">
+                                {cleaned_bot_msg}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        
+                        # Add feedback buttons after each bot message
+                        add_feedback_buttons(i)
+                        
+                    except Exception as e:
+                        st.error(f"Error displaying message: {str(e)}")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
         
@@ -650,6 +723,122 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# Add this JavaScript for better auto-scrolling
+st.markdown(
+    """
+    <script>
+        function scrollToBottom() {
+            const containers = document.getElementsByClassName('chat-container');
+            if (containers.length > 0) {
+                const lastContainer = containers[containers.length - 1];
+                lastContainer.scrollTop = lastContainer.scrollHeight;
+            }
+        }
+        
+        // Call on load and after any content changes
+        window.addEventListener('load', scrollToBottom);
+        const observer = new MutationObserver(scrollToBottom);
+        observer.observe(document.body, { childList: true, subtree: true });
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
+def clean_message_text(text):
+    """Clean message text of common formatting issues"""
+    return (text
+        .replace("</div>", "")
+        .replace("<div>", "")
+        .replace("andthe", " and the ")
+        .replace("andthemedianbasesalaryinternationally", " and the median base salary internationally ")
+        .replace("_", "")
+        .replace("  ", " ")  # Remove double spaces
+        .replace("\n\n", "\n")  # Remove double line breaks
+        .strip())
+
+# Add session timeout check
+def check_session_timeout(timeout_minutes=30):
+    if 'last_activity' in st.session_state:
+        inactive_time = datetime.now() - st.session_state.last_activity
+        if inactive_time.total_seconds() > (timeout_minutes * 60):
+            # Reset session
+            st.session_state.chat_history = []
+            st.session_state.session_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+            st.session_state.last_activity = datetime.now()
+            return True
+    return False
+
+# Call this in main() before displaying chat
+if check_session_timeout():
+    st.info("Session timed out due to inactivity. Starting new session.")
+
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def load_context_data():
+    with open('context.json', 'r') as f:
+        return json.load(f)
+
+@st.cache_data(ttl=3600)
+def load_general_info():
+    with open('general_info.txt', 'r') as f:
+        return f.read()
+
+def add_feedback_buttons(message_index):
+    if message_index >= len(st.session_state.conversation_ids):
+        return
+        
+    conversation_id = st.session_state.conversation_ids[message_index]
+    
+    # Create columns for feedback buttons
+    col1, col2, col3, col4 = st.columns([1, 1, 1, 4])
+    
+    with col1:
+        if st.button("👍", key=f"thumbs_up_{message_index}"):
+            update_feedback(
+                conversation_id,
+                "positive",
+                {"reaction": "thumbs_up"}
+            )
+            st.success("Thank you for your feedback!")
+    
+    with col2:
+        if st.button("👎", key=f"thumbs_down_{message_index}"):
+            update_feedback(
+                conversation_id,
+                "negative",
+                {"reaction": "thumbs_down"}
+            )
+            st.success("Thank you for your feedback!")
+    
+    with col3:
+        if st.button("⚠️", key=f"report_{message_index}"):
+            st.session_state[f"report_open_{message_index}"] = True
+    
+    # Handle detailed report submission        
+    if st.session_state.get(f"report_open_{message_index}", False):
+        with st.expander("Report Issue"):
+            issue_type = st.selectbox(
+                "Issue Type", 
+                ["Incorrect Information", "Unclear Response", "Missing Information", "Other"],
+                key=f"issue_type_{message_index}"
+            )
+            issue_description = st.text_area(
+                "Description",
+                key=f"issue_desc_{message_index}"
+            )
+            
+            if st.button("Submit Report", key=f"submit_report_{message_index}"):
+                update_feedback(
+                    conversation_id,
+                    "report",
+                    {
+                        "issue_type": issue_type,
+                        "description": issue_description,
+                        "reaction": "report"
+                    }
+                )
+                st.success("Thank you for reporting this issue!")
+                st.session_state[f"report_open_{message_index}"] = False
 
 if __name__ == "__main__":
     main()
