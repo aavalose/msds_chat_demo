@@ -490,7 +490,7 @@ def main():
                 <style>
                 /* Remove extra padding at the top of the container */
                 .stMarkdown {
-                    margin-top: -100px;  /* Adjust this value to move container up/down */
+                    margin-top: -200px;  /* Adjust this value to move container up/down */
                 }
                 
                 /* Ensure proper spacing between input and chat */
