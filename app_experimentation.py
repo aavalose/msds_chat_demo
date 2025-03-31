@@ -419,17 +419,134 @@ def main():
     tab1, tab2, tab3 = st.tabs(["Chat", "About", "Debug"])
 
     with tab1:
+        # Add custom CSS for better layout
+        st.markdown("""
+            <style>
+            /* Reduce space between title and input */
+            .main > div:first-child {
+                padding-bottom: 0rem;
+            }
+            
+            /* Adjust input box and container spacing */
+            .stTextInput {
+                padding-bottom: 1rem;
+            }
+            
+            /* Move chat container up */
+            [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] {
+                gap: 0rem;
+                padding-top: 0rem;
+            }
+            
+            /* Custom container styling */
+            .chat-container {
+                height: calc(100vh - 300px);
+                overflow-y: auto;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+                padding: 1rem;
+                margin-top: 1rem;
+                background-color: white;
+            }
+            
+            /* Message styling */
+            .message {
+                margin: 0.5rem 0;
+                padding: 0.5rem;
+                border-radius: 15px;
+            }
+            
+            .user-message {
+                background-color: #007AFF;
+                color: white;
+                margin-left: 20%;
+                margin-right: 1rem;
+            }
+            
+            .bot-message {
+                background-color: #E9ECEF;
+                color: black;
+                margin-right: 20%;
+                margin-left: 1rem;
+            }
+            </style>
+        """, unsafe_allow_html=True)
         
-        with st.sidebar:
-            st.subheader("Session Management")
-            st.write(f"Current Session ID: {st.session_state.session_id}")
-
-            if st.button("Start New Session"):
+        # Create two columns for main chat and sidebar
+        col1, col2 = st.columns([3, 1])
+        
+        with col1:
+            # Input area
+            st.subheader("Ask me about USF's MSDS program")
+            user_message = st.text_input("Type your question here:", key="user_input")
+            
+            # Send button in the same line as input
+            if st.button("Send", key="send_button") and user_message:
+                with st.spinner("Thinking..."):
+                    start_time = datetime.now()
+                    bot_response = get_bot_response(user_message)
+                    response_time = (datetime.now() - start_time).total_seconds()
+                    
+                    st.session_state.chat_history.append({"role": "user", "content": user_message})
+                    st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
+                    
+                    conversation_id = save_conversation(
+                        st.session_state.session_id, 
+                        user_message, 
+                        bot_response,
+                        response_time
+                    )
+                    if conversation_id:
+                        if 'conversation_ids' not in st.session_state:
+                            st.session_state.conversation_ids = []
+                        st.session_state.conversation_ids.append(conversation_id)
+            
+            # Chat container
+            chat_container = st.container()
+            with chat_container:
+                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+                
+                # Display messages
+                for i, (user_msg, bot_msg) in enumerate(chat_pairs):
+                    # User message
+                    st.markdown(
+                        f"""
+                        <div class="message user-message">
+                            {user_msg["content"]}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Bot message
+                    cleaned_bot_msg = (bot_msg["content"]
+                        .replace("</div>", "")
+                        .replace("<div>", "")
+                        .replace("andthe", " and the ")
+                        .replace("_", "")
+                        .strip())
+                    
+                    st.markdown(
+                        f"""
+                        <div class="message bot-message">
+                            {cleaned_bot_msg}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+        with col2:
+            st.sidebar.subheader("Session Management")
+            st.sidebar.write(f"Session ID: {st.session_state.session_id}")
+            
+            if st.sidebar.button("New Session"):
                 st.session_state.session_id = datetime.now().strftime("%Y%m%d-%H%M%S")
                 st.session_state.chat_history = []
                 st.rerun()
             
-            st.subheader("Example Questions:")
+            st.sidebar.subheader("Example Questions")
             example_questions = [
                 "What are the admission requirements for the MSDS program?",
                 "How long does the MSDS program take to complete?",
@@ -440,193 +557,12 @@ def main():
             ]
             
             for q in example_questions:
-                if st.button(q, key=f"btn_{q[:20]}"): # Added unique keys for buttons
+                if st.sidebar.button(q, key=f"btn_{q[:20]}"):
                     matched_question, matched_answer, similarity = find_most_similar_question(q)
                     bot_response = get_bot_response(q)
                     st.session_state.chat_history.append({"role": "user", "content": q})
                     st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
                     save_conversation(st.session_state.session_id, q, bot_response, 0.0)
-        
-        st.subheader("Ask me about USF's MSDS program")
-        user_message = st.text_input("Type your question here:", key="user_input")
-        
-        if st.button("Send", key="send_button") and user_message:
-            with st.spinner("Thinking..."):
-                start_time = datetime.now()
-                bot_response = get_bot_response(user_message)
-                response_time = (datetime.now() - start_time).total_seconds()
-                
-                st.session_state.chat_history.append({"role": "user", "content": user_message})
-                st.session_state.chat_history.append({"role": "assistant", "content": bot_response})
-                
-                conversation_id = save_conversation(
-                    st.session_state.session_id, 
-                    user_message, 
-                    bot_response,
-                    response_time
-                )
-                if conversation_id:
-                    if 'conversation_ids' not in st.session_state:
-                        st.session_state.conversation_ids = []
-                    st.session_state.conversation_ids.append(conversation_id)
-        
-        # Get chat history pairs in reverse order (newest first)
-        chat_pairs = []
-        for i in range(0, len(st.session_state.chat_history), 2):
-            if i + 1 < len(st.session_state.chat_history):
-                user_msg = st.session_state.chat_history[i]
-                bot_msg = st.session_state.chat_history[i + 1]
-                chat_pairs.append((user_msg, bot_msg))
-
-        # After the user input and send button, but before the chat container
-        st.write("")  # Remove extra spacing
-
-        # Create a container for the chat history with fixed height and scrolling
-        chat_container = st.container()
-        with chat_container:
-            # Remove any extra padding/margins at the top
-            st.markdown(
-                """
-                <style>
-                /* Remove extra padding at the top of the container */
-                .stMarkdown {
-                    margin-top: -200px;  /* Adjust this value to move container up/down */
-                }
-                
-                /* Ensure proper spacing between input and chat */
-                .stTextInput {
-                    margin-bottom: 10px;
-                }
-                
-                /* Custom scrollbar styling */
-                div[data-testid="stMarkdownContainer"] {
-                    scrollbar-width: thin;
-                    scrollbar-color: #888 #f1f1f1;
-                    margin-top: 0;
-                    padding-top: 0;
-                }
-                
-                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar {
-                    width: 8px;
-                }
-                
-                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 4px;
-                }
-                
-                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb {
-                    background: #888;
-                    border-radius: 4px;
-                }
-                
-                div[data-testid="stMarkdownContainer"]::-webkit-scrollbar-thumb:hover {
-                    background: #555;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
-            
-            # Calculate total height based on number of messages
-            min_height = 500  # Increased minimum height
-            message_count = len(chat_pairs) * 2
-            container_height = max(min_height, min(message_count * 100, 800))
-            
-            # Create scrollable container
-            chat_placeholder = st.empty()
-            with chat_placeholder.container():
-                st.markdown(
-                    f"""
-                    <div style="
-                        height: {container_height}px;
-                        overflow-y: auto;
-                        display: flex;
-                        flex-direction: column;
-                        padding: 10px;
-                        margin-top: 0;
-                        border: 1px solid #ddd;
-                        border-radius: 10px;
-                    ">
-                    """, 
-                    unsafe_allow_html=True
-                )
-                
-                # Display messages in chronological order (oldest to newest)
-                for i, (user_msg, bot_msg) in enumerate(chat_pairs):
-                    # User message - right aligned
-                    st.markdown(
-                        f"""
-                        <div style="display: flex; justify-content: flex-end; align-items: center; margin: 5px;">
-                            <div style="
-                                background-color: #007AFF;
-                                color: white;
-                                padding: 10px 15px;
-                                border-radius: 20px;
-                                margin-right: 10px;
-                                max-width: 70%;
-                            ">
-                                {user_msg["content"]}
-                            </div>
-                            <div>🧑</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                    # Bot message - left aligned
-                    cleaned_bot_msg = (bot_msg["content"]
-                        .replace("</div>", "")
-                        .replace("<div>", "")
-                        .replace("_", "")
-                        .strip())
-                    
-                    st.markdown(
-                        f"""
-                        <div style="display: flex; justify-content: flex-start; align-items: center; margin: 5px;">
-                            <div>🤖</div>
-                            <div style="
-                                background-color: #E9ECEF;
-                                color: black;
-                                padding: 10px 15px;
-                                border-radius: 20px;
-                                margin-left: 10px;
-                                max-width: 70%;
-                            ">
-                                {cleaned_bot_msg}
-                            </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                    # Feedback buttons in a flex container
-                    st.markdown(
-                        f"""
-                        <div style="display: flex; justify-content: flex-start; gap: 10px; margin: 5px 0 15px 40px;">
-                            <button onclick="handle_feedback('{i}', 'positive')" style="border: none; background: none; cursor: pointer; padding: 5px;">👍</button>
-                            <button onclick="handle_feedback('{i}', 'negative')" style="border: none; background: none; cursor: pointer; padding: 5px;">👎</button>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-
-                # Close the scrollable container
-                st.markdown("</div>", unsafe_allow_html=True)
-
-            # Add auto-scroll JavaScript
-            st.markdown(
-                """
-                <script>
-                    // Auto-scroll to bottom
-                    const chatContainer = document.querySelector('[data-testid="stMarkdownContainer"]');
-                    if (chatContainer) {
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }
-                </script>
-                """,
-                unsafe_allow_html=True
-            )
 
     with tab3:
         st.session_state.debug_mode = st.checkbox("Enable Debug Mode", value=False)
