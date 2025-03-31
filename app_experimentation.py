@@ -580,24 +580,46 @@ def main():
             # Chat container
             chat_container = st.container()
             with chat_container:
-                # Simple container with fixed height and scrolling
+                # Simpler container styling
                 st.markdown("""
                     <style>
                     .chat-container {
-                        height: 600px;
+                        height: 500px;
                         overflow-y: auto;
                         border: 1px solid rgba(255, 255, 255, 0.1);
                         border-radius: 10px;
                         padding: 1rem;
-                        margin-top: 1rem;
+                        margin-bottom: 1rem;
                         background-color: transparent;
+                    }
+                    
+                    .message {
+                        padding: 0.8rem 1rem;
+                        border-radius: 15px;
+                        margin: 0.5rem 0;
+                        word-wrap: break-word;
+                    }
+                    
+                    .user-message {
+                        background-color: #007AFF;
+                        color: white;
+                        margin-left: 20%;
+                        margin-right: 1rem;
+                    }
+                    
+                    .bot-message {
+                        background-color: #E9ECEF;
+                        color: black;
+                        margin-right: 20%;
+                        margin-left: 1rem;
                     }
                     </style>
                 """, unsafe_allow_html=True)
                 
+                # Create container first
                 st.markdown('<div class="chat-container">', unsafe_allow_html=True)
                 
-                # Display welcome message if no messages
+                # Welcome message for empty chat
                 if not chat_pairs:
                     st.markdown(
                         """
@@ -608,7 +630,7 @@ def main():
                         unsafe_allow_html=True
                     )
                 
-                # Display messages in chronological order
+                # Display each message pair
                 for i, (user_msg, bot_msg) in enumerate(chat_pairs):
                     # User message
                     st.markdown(
@@ -631,9 +653,10 @@ def main():
                         unsafe_allow_html=True
                     )
                     
-                    # Add feedback buttons after each bot message
+                    # Feedback buttons
                     add_feedback_buttons(i)
                 
+                # Close container
                 st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
