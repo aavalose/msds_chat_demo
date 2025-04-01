@@ -586,48 +586,63 @@ def main():
                 
                 # Reverse the order of messages to show most recent first
                 for i, (user_msg, bot_msg) in enumerate(reversed(chat_pairs)):
-                    # Create columns for message alignment
-                    col1, col2 = st.columns([6, 6])
-                    
                     # Bot message (on the left)
-                    with col1:
-                        cleaned_bot_msg = clean_message_text(bot_msg["content"])
-                        st.markdown(
-                            f"""
-                            <div style="
-                                background-color: #2D2D2D;
-                                color: white;
-                                padding: 15px;
-                                border-radius: 15px;
-                                margin: 5px;
-                                position: relative;
-                            ">
-                                🤖 {cleaned_bot_msg}
+                    cleaned_bot_msg = clean_message_text(bot_msg["content"])
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color: #2D2D2D;
+                            color: white;
+                            padding: 15px;
+                            border-radius: 15px;
+                            margin: 5px;
+                            margin-right: 25%;
+                            position: relative;
+                        ">
+                            🤖 {cleaned_bot_msg}
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    
+                    # Add feedback buttons without columns
+                    if i < len(st.session_state.conversation_ids):
+                        st.markdown("""
+                            <div style="margin-left: 15px; margin-bottom: 10px;">
+                                Feedback:
                             </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        # Add feedback buttons after each bot message
-                        add_feedback_buttons(len(chat_pairs) - 1 - i)  # Adjust index for reversed order
+                        """, unsafe_allow_html=True)
+                        feedback_cols = st.columns([1, 1, 1, 4])
+                        with feedback_cols[0]:
+                            if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}"):
+                                update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "positive")
+                                st.success("Thank you for your feedback!")
+                        with feedback_cols[1]:
+                            if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}"):
+                                update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "negative")
+                                st.success("Thank you for your feedback!")
+                        with feedback_cols[2]:
+                            if st.button("⚠️", key=f"report_{len(chat_pairs) - 1 - i}"):
+                                st.session_state[f"report_open_{len(chat_pairs) - 1 - i}"] = True
                     
                     # User message (on the right)
-                    with col2:
-                        st.markdown(
-                            f"""
-                            <div style="
-                                background-color: #0084FF;
-                                color: white;
-                                padding: 15px;
-                                border-radius: 15px;
-                                margin: 5px;
-                                text-align: right;
-                                position: relative;
-                            ">
-                                {user_msg['content']} 👤
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background-color: #0084FF;
+                            color: white;
+                            padding: 15px;
+                            border-radius: 15px;
+                            margin: 5px;
+                            margin-left: 25%;
+                            text-align: right;
+                            position: relative;
+                        ">
+                            {user_msg['content']} 👤
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
         
         with col2:
             st.sidebar.subheader("Session Management")
@@ -801,63 +816,6 @@ def load_context_data():
 def load_general_info():
     with open('general_info.txt', 'r') as f:
         return f.read()
-
-def add_feedback_buttons(message_index):
-    if message_index >= len(st.session_state.conversation_ids):
-        return
-        
-    conversation_id = st.session_state.conversation_ids[message_index]
-    
-    # Create columns for feedback buttons
-    col1, col2, col3, col4 = st.columns([1, 1, 1, 4])
-    
-    with col1:
-        if st.button("👍", key=f"thumbs_up_{message_index}"):
-            update_feedback(
-                conversation_id,
-                "positive",
-                {"reaction": "thumbs_up"}
-            )
-            st.success("Thank you for your feedback!")
-    
-    with col2:
-        if st.button("👎", key=f"thumbs_down_{message_index}"):
-            update_feedback(
-                conversation_id,
-                "negative",
-                {"reaction": "thumbs_down"}
-            )
-            st.success("Thank you for your feedback!")
-    
-    with col3:
-        if st.button("⚠️", key=f"report_{message_index}"):
-            st.session_state[f"report_open_{message_index}"] = True
-    
-    # Handle detailed report submission        
-    if st.session_state.get(f"report_open_{message_index}", False):
-        with st.expander("Report Issue"):
-            issue_type = st.selectbox(
-                "Issue Type", 
-                ["Incorrect Information", "Unclear Response", "Missing Information", "Other"],
-                key=f"issue_type_{message_index}"
-            )
-            issue_description = st.text_area(
-                "Description",
-                key=f"issue_desc_{message_index}"
-            )
-            
-            if st.button("Submit Report", key=f"submit_report_{message_index}"):
-                update_feedback(
-                    conversation_id,
-                    "report",
-                    {
-                        "issue_type": issue_type,
-                        "description": issue_description,
-                        "reaction": "report"
-                    }
-                )
-                st.success("Thank you for reporting this issue!")
-                st.session_state[f"report_open_{message_index}"] = False
 
 if __name__ == "__main__":
     main()
