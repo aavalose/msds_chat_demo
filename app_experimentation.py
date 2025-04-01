@@ -580,84 +580,21 @@ def main():
             # Chat container
             chat_container = st.container()
             with chat_container:
-                # Simpler container styling
-                st.markdown("""
-                    <style>
-                    .chat-container {
-                        height: 500px;
-                        overflow-y: auto;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        border-radius: 10px;
-                        padding: 1rem;
-                        margin-bottom: 1rem;
-                        background-color: transparent;
-                    }
-                    
-                    .message {
-                        padding: 0.8rem 1rem;
-                        border-radius: 15px;
-                        margin: 0.5rem 0;
-                        word-wrap: break-word;
-                    }
-                    
-                    .user-message {
-                        background-color: #007AFF;
-                        color: white;
-                        margin-left: 20%;
-                        margin-right: 1rem;
-                    }
-                    
-                    .bot-message {
-                        background-color: #E9ECEF;
-                        color: black;
-                        margin-right: 20%;
-                        margin-left: 1rem;
-                    }
-                    </style>
-                """, unsafe_allow_html=True)
-                
-                # Create container first
-                st.markdown('<div class="chat-container">', unsafe_allow_html=True)
-                
-                # Welcome message for empty chat
+                # Display welcome message if no messages
                 if not chat_pairs:
-                    st.markdown(
-                        """
-                        <div style="text-align: center; color: #666; padding: 20px;">
-                            Start a conversation by asking a question about the MSDS program!
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    st.info("Start a conversation by asking a question about the MSDS program!")
                 
-                # Display each message pair
+                # Display messages in chronological order
                 for i, (user_msg, bot_msg) in enumerate(chat_pairs):
                     # User message
-                    st.markdown(
-                        f"""
-                        <div class="message user-message">
-                            {user_msg["content"]}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    st.write(f"👤 {user_msg['content']}")
                     
                     # Bot message
                     cleaned_bot_msg = clean_message_text(bot_msg["content"])
-                    st.markdown(
-                        f"""
-                        <div class="message bot-message">
-                            {cleaned_bot_msg}
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                    st.write(f"🤖 {cleaned_bot_msg}")
                     
-                    # Feedback buttons
+                    # Add feedback buttons after each bot message
                     add_feedback_buttons(i)
-                
-                # Close container
-                st.markdown('</div>', unsafe_allow_html=True)
         
         with col2:
             st.sidebar.subheader("Session Management")
