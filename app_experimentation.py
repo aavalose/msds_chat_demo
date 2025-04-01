@@ -584,17 +584,50 @@ def main():
                 if not chat_pairs:
                     st.info("Start a conversation by asking a question about the MSDS program!")
                 
-                # Display messages in chronological order
-                for i, (user_msg, bot_msg) in enumerate(chat_pairs):
-                    # User message
-                    st.write(f"👤 {user_msg['content']}")
+                # Reverse the order of messages to show most recent first
+                for i, (user_msg, bot_msg) in enumerate(reversed(chat_pairs)):
+                    # Create columns for message alignment
+                    col1, col2 = st.columns([6, 6])
                     
-                    # Bot message
-                    cleaned_bot_msg = clean_message_text(bot_msg["content"])
-                    st.write(f"🤖 {cleaned_bot_msg}")
+                    # Bot message (on the left)
+                    with col1:
+                        cleaned_bot_msg = clean_message_text(bot_msg["content"])
+                        st.markdown(
+                            f"""
+                            <div style="
+                                background-color: #2D2D2D;
+                                color: white;
+                                padding: 15px;
+                                border-radius: 15px;
+                                margin: 5px;
+                                position: relative;
+                            ">
+                                🤖 {cleaned_bot_msg}
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
+                        # Add feedback buttons after each bot message
+                        add_feedback_buttons(len(chat_pairs) - 1 - i)  # Adjust index for reversed order
                     
-                    # Add feedback buttons after each bot message
-                    add_feedback_buttons(i)
+                    # User message (on the right)
+                    with col2:
+                        st.markdown(
+                            f"""
+                            <div style="
+                                background-color: #0084FF;
+                                color: white;
+                                padding: 15px;
+                                border-radius: 15px;
+                                margin: 5px;
+                                text-align: right;
+                                position: relative;
+                            ">
+                                {user_msg['content']} 👤
+                            </div>
+                            """,
+                            unsafe_allow_html=True
+                        )
         
         with col2:
             st.sidebar.subheader("Session Management")
