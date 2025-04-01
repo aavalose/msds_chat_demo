@@ -605,24 +605,17 @@ def main():
                         unsafe_allow_html=True
                     )
                     
-                    # Add feedback buttons without columns
+                    # Add feedback buttons in a more compact way
                     if i < len(st.session_state.conversation_ids):
-                        st.markdown("""
-                            <div style="margin-left: 15px; margin-bottom: 10px;">
-                                Feedback:
-                            </div>
-                        """, unsafe_allow_html=True)
-                        feedback_cols = st.columns([1, 1, 1, 4])
-                        with feedback_cols[0]:
-                            if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}"):
+                        cols = st.columns([1, 1, 1, 8])  # Make the last column wider to push buttons left
+                        with cols[0]:
+                            if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}", help="Helpful response"):
                                 update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "positive")
-                                st.success("Thank you for your feedback!")
-                        with feedback_cols[1]:
-                            if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}"):
+                        with cols[1]:
+                            if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}", help="Not helpful"):
                                 update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "negative")
-                                st.success("Thank you for your feedback!")
-                        with feedback_cols[2]:
-                            if st.button("⚠️", key=f"report_{len(chat_pairs) - 1 - i}"):
+                        with cols[2]:
+                            if st.button("⚠️", key=f"report_{len(chat_pairs) - 1 - i}", help="Report an issue"):
                                 st.session_state[f"report_open_{len(chat_pairs) - 1 - i}"] = True
                     
                     # User message (on the right)
