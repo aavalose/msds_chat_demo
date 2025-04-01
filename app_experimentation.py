@@ -160,7 +160,10 @@ def save_conversation(session_id, user_message, bot_response, response_time, met
             "timestamp": datetime.now(),
             "user_message": user_message,
             "bot_response": bot_response,
-            "feedback": None,
+            "feedback": {
+                "type": None,
+                "timestamp": None
+            },  # Initialize feedback structure
             "similarity_score": st.session_state.debug_similarity,
             "matched_question": st.session_state.debug_matched_question,
             "response_time_seconds": response_time
@@ -607,16 +610,23 @@ def main():
                     
                     # Add feedback buttons in a more compact way
                     if i < len(st.session_state.conversation_ids):
-                        cols = st.columns([1, 1, 1, 8])  # Make the last column wider to push buttons left
+                        cols = st.columns([1, 1, 10])  # Adjust ratio to push buttons left
                         with cols[0]:
                             if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}", help="Helpful response"):
-                                update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "positive")
+                                update_feedback(
+                                    st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
+                                    "positive",
+                                    {"reaction": "thumbs_up"}
+                                )
+                                st.success("Thank you for your feedback!")
                         with cols[1]:
                             if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}", help="Not helpful"):
-                                update_feedback(st.session_state.conversation_ids[len(chat_pairs) - 1 - i], "negative")
-                        with cols[2]:
-                            if st.button("⚠️", key=f"report_{len(chat_pairs) - 1 - i}", help="Report an issue"):
-                                st.session_state[f"report_open_{len(chat_pairs) - 1 - i}"] = True
+                                update_feedback(
+                                    st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
+                                    "negative",
+                                    {"reaction": "thumbs_down"}
+                                )
+                                st.success("Thank you for your feedback!")
                     
                     # User message (on the right)
                     st.markdown(
