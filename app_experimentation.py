@@ -17,6 +17,7 @@ from pymongo import MongoClient
 from sklearn.metrics.pairwise import cosine_similarity
 import chromadb
 from chromadb.utils import embedding_functions
+from bson.objectid import ObjectId
 
 # Handle missing API key safely
 GOOGLE_API_KEY = st.secrets.get("GOOGLE_API_KEY")
@@ -187,7 +188,7 @@ def update_feedback(conversation_id, feedback_type, details=None):
         
     try:
         feedback_data = {
-            "feedback_type": feedback_type,
+            "type": feedback_type,  # Changed from feedback_type to type to match schema
             "timestamp": datetime.now()
         }
         
@@ -195,15 +196,22 @@ def update_feedback(conversation_id, feedback_type, details=None):
         if details:
             feedback_data.update(details)
         
-        conversations_collection.update_one(
-            {"_id": conversation_id},
+        # Convert string ID to ObjectId
+        object_id = ObjectId(conversation_id)
+        
+        result = conversations_collection.update_one(
+            {"_id": object_id},
             {"$set": {
                 "feedback": feedback_data,
                 "last_updated": datetime.now()
             }}
         )
+        
+        # Return True if the update was successful
+        return result.modified_count > 0
     except Exception as e:
         st.error(f"Error updating feedback: {str(e)}")
+        return False
 
 # Find the most similar question using ChromaDB
 def find_most_similar_question(user_input, similarity_threshold=0.3):
@@ -610,23 +618,50 @@ def main():
                     
                     # Add feedback buttons in a more compact way
                     if i < len(st.session_state.conversation_ids):
-                        cols = st.columns([1, 1, 10])  # Adjust ratio to push buttons left
-                        with cols[0]:
-                            if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}", help="Helpful response"):
-                                update_feedback(
-                                    st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
-                                    "positive",
-                                    {"reaction": "thumbs_up"}
-                                )
-                                st.success("Thank you for your feedback!")
-                        with cols[1]:
-                            if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}", help="Not helpful"):
-                                update_feedback(
-                                    st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
-                                    "negative",
-                                    {"reaction": "thumbs_down"}
-                                )
-                                st.success("Thank you for your feedback!")
+                        feedback_key = f"feedback_{len(chat_pairs) - 1 - i}"
+                        
+                        # Initialize feedback state if not exists
+                        if feedback_key not in st.session_state:
+                            st.session_state[feedback_key] = None
+                        
+                        # Only show buttons if feedback hasn't been given
+                        if not st.session_state[feedback_key]:
+                            cols = st.columns([1, 1, 10])  # Adjust ratio to push buttons left
+                            with cols[0]:
+                                if st.button("👍", key=f"thumbs_up_{len(chat_pairs) - 1 - i}", help="Helpful response"):
+                                    success = update_feedback(
+                                        st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
+                                        "positive",
+                                        {"reaction": "thumbs_up"}
+                                    )
+                                    if success:
+                                        st.session_state[feedback_key] = "positive"
+                                        st.rerun()  # Rerun to update the display
+                            with cols[1]:
+                                if st.button("👎", key=f"thumbs_down_{len(chat_pairs) - 1 - i}", help="Not helpful"):
+                                    success = update_feedback(
+                                        st.session_state.conversation_ids[len(chat_pairs) - 1 - i], 
+                                        "negative",
+                                        {"reaction": "thumbs_down"}
+                                    )
+                                    if success:
+                                        st.session_state[feedback_key] = "negative"
+                                        st.rerun()  # Rerun to update the display
+                        else:
+                            # Show thank you message if feedback was given
+                            st.markdown(
+                                """
+                                <div style="
+                                    color: #28a745;
+                                    font-size: 0.8em;
+                                    margin-left: 15px;
+                                    margin-bottom: 10px;
+                                ">
+                                    Thank you for your feedback!
+                                </div>
+                                """,
+                                unsafe_allow_html=True
+                            )
                     
                     # User message (on the right)
                     st.markdown(
